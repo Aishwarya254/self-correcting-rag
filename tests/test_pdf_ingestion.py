@@ -15,7 +15,14 @@ class FakePage:
     def __init__(self, text: str | None) -> None:
         self.text = text
 
-    def extract_text(self) -> str | None:
+    def extract_text(
+        self,
+        *,
+        extraction_mode: str,
+        layout_mode_space_vertically: bool,
+    ) -> str | None:
+        assert extraction_mode == "layout"
+        assert layout_mode_space_vertically is False
         return self.text
 
 

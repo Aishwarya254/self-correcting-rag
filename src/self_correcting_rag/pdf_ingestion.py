@@ -18,11 +18,25 @@ def extract_pdf_pages(path: str | Path) -> list[DocumentPage]:
 
     reader = PdfReader(pdf_path)
 
-    return [
-        DocumentPage(
-            source=str(pdf_path),
-            page_number=page_number,
-            text=clean_extracted_text(page.extract_text() or ""),
+    document_pages = []
+
+    for page_number, page in enumerate(reader.pages, start=1):
+        try:
+            raw_text = page.extract_text(
+                extraction_mode="layout",
+                layout_mode_space_vertically=False,
+            )
+        except KeyError as error:
+            if error.args != ("/Contents",):
+                raise
+            raw_text = ""
+
+        document_pages.append(
+            DocumentPage(
+                source=str(pdf_path),
+                page_number=page_number,
+                text=clean_extracted_text(raw_text or ""),
+            )
         )
-        for page_number, page in enumerate(reader.pages, start=1)
-    ]
+
+    return document_pages
