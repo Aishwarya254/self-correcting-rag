@@ -5,6 +5,7 @@ import unicodedata
 
 _PARAGRAPH_BREAKS = re.compile(r"\n\s*\n+")
 _INLINE_WHITESPACE = re.compile(r"[^\S\n]+")
+_LINE_BREAK_HYPHENATION = re.compile(r"(?<=\w)-[ \t]*\n[ \t]*(?=\w)")
 
 
 def clean_extracted_text(text: str) -> str:
@@ -12,7 +13,7 @@ def clean_extracted_text(text: str) -> str:
 
     normalized_text = unicodedata.normalize("NFKC", text)
     normalized_text = normalized_text.replace("\r\n", "\n").replace("\r", "\n").strip()
-
+    normalized_text = _LINE_BREAK_HYPHENATION.sub("", normalized_text)
     if not normalized_text:
         return ""
 

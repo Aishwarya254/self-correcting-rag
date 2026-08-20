@@ -21,3 +21,11 @@ def test_clean_extracted_text_normalizes_spacing_and_paragraphs() -> None:
 def test_clean_extracted_text_handles_empty_content() -> None:
     assert clean_extracted_text("") == ""
     assert clean_extracted_text(" \n\t\r\n ") == ""
+
+
+def test_clean_extracted_text_repairs_line_break_hyphenation() -> None:
+    raw_text = "continuous mathemat-\nics and real-time systems"
+
+    cleaned_text = clean_extracted_text(raw_text)
+
+    assert cleaned_text == "continuous mathematics and real-time systems"
