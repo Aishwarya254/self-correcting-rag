@@ -1,0 +1,1 @@
+"""Self-correcting RAG for summarizing and querying PDF books."""
