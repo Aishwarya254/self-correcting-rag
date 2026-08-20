@@ -25,7 +25,7 @@ class FakeReader:
     def __init__(self, path: Path) -> None:
         self.path = path
         self.pages = [
-            FakePage("First page."),
+            FakePage("  First   page.\nContinued.  "),
             FakePage(None),
         ]
 
@@ -44,7 +44,7 @@ def test_extract_pdf_pages_preserves_page_numbers_and_source(
         DocumentPage(
             source=str(pdf_path),
             page_number=1,
-            text="First page.",
+            text="First page. Continued.",
         ),
         DocumentPage(
             source=str(pdf_path),

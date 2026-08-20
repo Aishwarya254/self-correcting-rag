@@ -5,6 +5,7 @@ from pathlib import Path
 from pypdf import PdfReader
 
 from self_correcting_rag.models import DocumentPage
+from self_correcting_rag.text_cleaning import clean_extracted_text
 
 
 def extract_pdf_pages(path: str | Path) -> list[DocumentPage]:
@@ -21,7 +22,7 @@ def extract_pdf_pages(path: str | Path) -> list[DocumentPage]:
         DocumentPage(
             source=str(pdf_path),
             page_number=page_number,
-            text=page.extract_text() or "",
+            text=clean_extracted_text(page.extract_text() or ""),
         )
         for page_number, page in enumerate(reader.pages, start=1)
     ]
