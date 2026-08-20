@@ -12,6 +12,9 @@ dependencies = [
     "pypdf>=6.14,<7.0",
 ]
 
+[project.scripts]
+self-rag = "self_correcting_rag.cli:main"
+
 [project.optional-dependencies]
 embeddings = [
     "sentence-transformers>=5.0,<6.0",
