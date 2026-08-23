@@ -1,6 +1,17 @@
 """Tests for detecting structural book content."""
 
-from self_correcting_rag.content_detection import is_table_of_contents
+from self_correcting_rag.content_detection import (
+    is_navigation_query,
+    is_table_of_contents,
+)
+
+
+def test_detects_navigation_query() -> None:
+    assert is_navigation_query("Which chapter discusses AI ethics?") is True
+
+
+def test_does_not_classify_factual_query_as_navigation() -> None:
+    assert is_navigation_query("What is artificial intelligence?") is False
 
 
 def test_detects_table_of_contents_text() -> None:

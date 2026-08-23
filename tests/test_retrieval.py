@@ -16,6 +16,16 @@ class FakeEmbedder:
             "Cats are small domestic animals.": [1.0, 0.0],
             "RAG retrieves evidence before answering.": [0.0, 1.0],
             "How does RAG retrieve evidence?": [0.0, 1.0],
+            "Contents 1 Artificial Intelligence . . . . 1 1.1 Intelligent Agents . . . . 5": [
+                1.0,
+                0.0,
+            ],
+            "Artificial intelligence is the study of intelligent agents.": [
+                0.9,
+                0.1,
+            ],
+            "What is artificial intelligence?": [1.0, 0.0],
+            "Which chapter discusses artificial intelligence?": [1.0, 0.0],
         }
         return [vectors[text] for text in texts]
 
@@ -62,3 +72,53 @@ def test_vector_index_rejects_invalid_limit() -> None:
             "How does RAG retrieve evidence?",
             limit=0,
         )
+
+
+def test_factual_query_penalizes_table_of_contents_chunk() -> None:
+    contents_chunk = DocumentChunk(
+        source="book.pdf",
+        chunk_index=0,
+        start_page=1,
+        end_page=1,
+        text=("Contents 1 Artificial Intelligence . . . . 1 1.1 Intelligent Agents . . . . 5"),
+    )
+    prose_chunk = DocumentChunk(
+        source="book.pdf",
+        chunk_index=1,
+        start_page=5,
+        end_page=5,
+        text="Artificial intelligence is the study of intelligent agents.",
+    )
+    index = InMemoryVectorIndex(FakeEmbedder())
+    index.add([contents_chunk, prose_chunk])
+
+    results = index.search("What is artificial intelligence?", limit=1)
+
+    assert results[0].chunk == prose_chunk
+
+
+def test_navigation_query_keeps_table_of_contents_chunk() -> None:
+    contents_chunk = DocumentChunk(
+        source="book.pdf",
+        chunk_index=0,
+        start_page=1,
+        end_page=1,
+        text=("Contents 1 Artificial Intelligence . . . . 1 1.1 Intelligent Agents . . . . 5"),
+    )
+    prose_chunk = DocumentChunk(
+        source="book.pdf",
+        chunk_index=1,
+        start_page=5,
+        end_page=5,
+        text="Artificial intelligence is the study of intelligent agents.",
+    )
+    index = InMemoryVectorIndex(FakeEmbedder())
+    index.add([contents_chunk, prose_chunk])
+
+    results = index.search(
+        "Which chapter discusses artificial intelligence?",
+        limit=1,
+    )
+
+    assert results[0].chunk == contents_chunk
+    assert results[0].score == 1.0

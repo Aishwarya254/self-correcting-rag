@@ -8,6 +8,17 @@ _CONTENTS_HEADING = re.compile(
 )
 _DOT_LEADER = re.compile(r"(?:\.\s*){4,}")
 _NUMBERED_SECTION = re.compile(r"\b\d+(?:\.\d+)+\s+\w+")
+_NAVIGATION_QUERY = re.compile(
+    r"\b(?:which|what)\s+(?:chapter|section|page)\b"
+    r"|\bwhere\s+(?:is|are|can|does|do)\b",
+    re.IGNORECASE,
+)
+
+
+def is_navigation_query(text: str) -> bool:
+    """Return whether text appears to be a navigation query."""
+
+    return bool(_NAVIGATION_QUERY.search(text))
 
 
 def is_table_of_contents(text: str) -> bool:

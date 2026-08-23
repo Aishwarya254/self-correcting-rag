@@ -4,7 +4,13 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
+from self_correcting_rag.content_detection import (
+    is_navigation_query,
+    is_table_of_contents,
+)
 from self_correcting_rag.models import DocumentChunk
+
+_TABLE_OF_CONTENTS_PENALTY = 0.15
 
 
 class Embedder(Protocol):
@@ -75,6 +81,10 @@ class InMemoryVectorIndex:
                     strict=True,
                 )
             )
+
+            if is_table_of_contents(chunk.text) and not is_navigation_query(query):
+                score -= _TABLE_OF_CONTENTS_PENALTY
+
             results.append(SearchResult(chunk=chunk, score=score))
 
         results.sort(key=lambda result: result.score, reverse=True)
