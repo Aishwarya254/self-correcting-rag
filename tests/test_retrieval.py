@@ -1,6 +1,7 @@
 """Tests for semantic chunk retrieval."""
 
 from collections.abc import Sequence
+from pathlib import Path
 
 import pytest
 
@@ -121,4 +122,31 @@ def test_navigation_query_keeps_table_of_contents_chunk() -> None:
     )
 
     assert results[0].chunk == contents_chunk
+    assert results[0].score == 1.0
+
+
+def test_vector_index_can_be_saved_and_loaded(tmp_path: Path) -> None:
+    chunk = DocumentChunk(
+        source="book.pdf",
+        chunk_index=0,
+        start_page=2,
+        end_page=2,
+        text="RAG retrieves evidence before answering.",
+    )
+    index = InMemoryVectorIndex(FakeEmbedder())
+    index.add([chunk])
+
+    index_path = tmp_path / "book-index.json"
+    index.save(index_path)
+
+    loaded_index = InMemoryVectorIndex.load(
+        index_path,
+        FakeEmbedder(),
+    )
+    results = loaded_index.search(
+        "How does RAG retrieve evidence?",
+        limit=1,
+    )
+
+    assert results[0].chunk == chunk
     assert results[0].score == 1.0

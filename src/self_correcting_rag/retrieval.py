@@ -1,7 +1,9 @@
 """Store and retrieve document chunks using semantic similarity."""
 
+import json
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import Protocol
 
 from self_correcting_rag.content_detection import (
@@ -11,6 +13,7 @@ from self_correcting_rag.content_detection import (
 from self_correcting_rag.models import DocumentChunk
 
 _TABLE_OF_CONTENTS_PENALTY = 0.15
+_INDEX_FORMAT_VERSION = 1
 
 
 class Embedder(Protocol):
@@ -51,6 +54,51 @@ class InMemoryVectorIndex:
 
         self._chunks.extend(chunk_list)
         self._vectors.extend(vectors)
+
+    def save(self, path: str | Path) -> None:
+        """Save document chunks and embedding vectors as JSON."""
+
+        entries = [
+            {
+                "chunk": asdict(chunk),
+                "vector": vector,
+            }
+            for chunk, vector in zip(
+                self._chunks,
+                self._vectors,
+                strict=True,
+            )
+        ]
+        payload = {
+            "version": _INDEX_FORMAT_VERSION,
+            "entries": entries,
+        }
+
+        Path(path).write_text(
+            json.dumps(payload),
+            encoding="utf-8",
+        )
+
+    @classmethod
+    def load(
+        cls,
+        path: str | Path,
+        embedder: Embedder,
+    ) -> "InMemoryVectorIndex":
+        """Load document chunks and embedding vectors from JSON."""
+
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+
+        if payload.get("version") != _INDEX_FORMAT_VERSION:
+            raise ValueError("unsupported vector index version")
+
+        index = cls(embedder)
+
+        for entry in payload["entries"]:
+            index._chunks.append(DocumentChunk(**entry["chunk"]))
+            index._vectors.append(entry["vector"])
+
+        return index
 
     def search(self, query: str, *, limit: int = 4) -> list[SearchResult]:
         """Return chunks with the highest dot-product similarity."""
