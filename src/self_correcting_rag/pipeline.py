@@ -32,6 +32,11 @@ class IndexedBook:
 
         return self._index.search(query, limit=limit)
 
+    def save_index(self, path: str | Path) -> None:
+        """Save the book's searchable vector index."""
+
+        self._index.save(path)
+
 
 def index_pdf(
     path: str | Path,

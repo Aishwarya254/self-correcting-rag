@@ -19,6 +19,9 @@ class FakeEmbedder:
 class FakeIndexedBook:
     """Return predictable search results."""
 
+    def __init__(self) -> None:
+        self.saved_path: Path | None = None
+
     def search(
         self,
         query: str,
@@ -40,6 +43,11 @@ class FakeIndexedBook:
                 score=0.95,
             )
         ]
+
+    def save_index(self, path: str | Path) -> None:
+        """Record where the CLI requested index persistence."""
+
+        self.saved_path = Path(path)
 
 
 def test_search_command_prints_ranked_evidence(
@@ -82,3 +90,40 @@ def test_search_command_prints_ranked_evidence(
     assert "**Pages:** 2-3" in output
     assert "**Score:** 0.9500" in output
     assert "RAG retrieves evidence before answering." in output
+
+
+def test_index_command_saves_vector_index(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    indexed_book = FakeIndexedBook()
+
+    def fake_index_pdf(
+        path: str | Path,
+        embedder: object,
+        *,
+        chunk_size: int,
+        overlap: int,
+    ) -> FakeIndexedBook:
+        assert Path(path) == Path("book.pdf")
+        assert isinstance(embedder, FakeEmbedder)
+        assert chunk_size == 300
+        assert overlap == 50
+        return indexed_book
+
+    monkeypatch.setattr(cli, "SentenceTransformerEmbedder", FakeEmbedder)
+    monkeypatch.setattr(cli, "index_pdf", fake_index_pdf)
+    index_path = tmp_path / "book-index.json"
+
+    exit_code = cli.main(
+        [
+            "index",
+            "book.pdf",
+            str(index_path),
+            "--device",
+            "cpu",
+        ]
+    )
+
+    assert exit_code == 0
+    assert indexed_book.saved_path == index_path

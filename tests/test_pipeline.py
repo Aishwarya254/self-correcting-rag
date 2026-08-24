@@ -7,6 +7,7 @@ import pytest
 
 from self_correcting_rag import pipeline
 from self_correcting_rag.models import DocumentPage
+from self_correcting_rag.retrieval import InMemoryVectorIndex
 
 
 class FakeEmbedder:
@@ -57,4 +58,42 @@ def test_index_pdf_builds_searchable_book(
     assert indexed_book.pages == tuple(pages)
     assert len(indexed_book.chunks) == 2
     assert results[0].chunk.start_page == 2
+    assert results[0].chunk.text == "RAG retrieves external evidence"
+
+
+def test_indexed_book_saves_searchable_vector_index(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    pages = [
+        DocumentPage(
+            source="book.pdf",
+            page_number=1,
+            text="RAG retrieves external evidence",
+        )
+    ]
+
+    monkeypatch.setattr(
+        pipeline,
+        "extract_pdf_pages",
+        lambda path: pages,
+    )
+    indexed_book = pipeline.index_pdf(
+        "book.pdf",
+        FakeEmbedder(),
+        chunk_size=4,
+        overlap=0,
+    )
+    index_path = tmp_path / "book-index.json"
+
+    indexed_book.save_index(index_path)
+    loaded_index = InMemoryVectorIndex.load(
+        index_path,
+        FakeEmbedder(),
+    )
+    results = loaded_index.search(
+        "How does RAG use evidence?",
+        limit=1,
+    )
+
     assert results[0].chunk.text == "RAG retrieves external evidence"
